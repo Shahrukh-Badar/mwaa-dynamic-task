@@ -22,7 +22,21 @@ def dag_taskflow_api_dynamic_tasks():
             {"id": 4, "name": "City", "description": "A night view of Tokyo city skyline",
              "URL": "https://cdn.pixabay.com/photo/2016/08/31/23/22/tokyo-1631703_1280.jpg"}]
 
-    get_data()
+    @task(max_active_tis_per_dag=5)
+    def mapper(arg):
+        print(arg)
+        return arg
+
+    def transformer(image_dict):
+        return {"image_id": image_dict["id"], "image_url": image_dict["URL"]}
+
+    @task()
+    def reducer(arg):
+        print(*arg, sep="\n")
+
+    transformed_list = get_data().map(transformer)
+    result = mapper.expand(arg=transformed_list)
+    reducer(result)
 
 
 dag_with_taskflow_api = dag_taskflow_api_dynamic_tasks()
